@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EV Charging Station Finder</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom, #e8f5e9, #a5d6a7);
+      color: #1b5e20;
+    }
+    header {
+      background-color: #2e7d32;
+      color: white;
+      padding: 1em;
+      text-align: center;
+      font-size: 1.6em;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    main {
+      padding: 1em;
+      max-width: 600px;
+      margin: auto;
+    }
+    select, input[type="time"], button {
+      width: 100%;
+      padding: 0.7em;
+      margin-top: 1em;
+      border-radius: 10px;
+      border: none;
+      font-size: 1em;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    button {
+      background-color: #43a047;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #2e7d32;
+    }
+    #map {
+      height: 300px;
+      margin-top: 1em;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .card {
+      background-color: #ffffffdd;
+      border-radius: 15px;
+      padding: 1em;
+      margin-top: 1em;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    }
+    ul {
+      padding-left: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <header>EV Charging Station Finder</header>
+  <main>
+    <div class="card">
+      <label for="city">Select City:</label>
+      <select id="city">
+        <option value="">--Choose--</option>
+        <option value="madurai">Madurai</option>
+        <option value="chennai">Chennai</option>
+      </select>
+      <button id="showStationsBtn">Show Stations</button>
+    </div>
+
+    <div id="map" class="card" style="display:none;"></div>
+
+    <div id="bookingForm" class="card" style="display:none;">
+      <h3>Book a Slot</h3>
+      <p><strong>Station:</strong> <span id="selectedStation"></span></p>
+      <label for="time">Choose Time:</label>
+      <input type="time" id="time"/>
+      <button id="bookBtn">Confirm Booking</button>
+    </div>
+
+    <div id="historyPage" class="card">
+      <h3>Booking History</h3>
+      <ul id="historyList"></ul>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script>
+    const stations = {
+      madurai: [
+        { name: "HP EV", lat: 9.9252, lng: 78.1198 },
+        { name: "Thunder EV", lat: 9.9311, lng: 78.1234 },
+        { name: "Green Plug", lat: 9.9187, lng: 78.1154 }
+      ],
+      chennai: [
+        { name: "HP EV", lat: 13.0827, lng: 80.2707 },
+        { name: "Thunder EV", lat: 13.0791, lng: 80.2851 },
+        { name: "Green Plug", lat: 13.0753, lng: 80.2622 }
+      ]
+    };
+
+    let map;
+    let selectedStation = "";
+
+    const citySelect = document.getElementById("city");
+    const showBtn = document.getElementById("showStationsBtn");
+    const mapDiv = document.getElementById("map");
+    const bookingForm = document.getElementById("bookingForm");
+    const stationLabel = document.getElementById("selectedStation");
+    const bookBtn = document.getElementById("bookBtn");
+    const historyList = document.getElementById("historyList");
+
+    function loadStations() {
+      const city = citySelect.value;
+      if (!stations[city]) {
+        alert("City will be added soon!");
+        return;
+      }
+
+      const locs = stations[city];
+      mapDiv.style.display = "block";
+
+      if (!map) {
+        map = L.map("map").setView([locs[0].lat, locs[0].lng], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "&copy; OpenStreetMap contributors"
+        }).addTo(map);
+      } else {
+        map.setView([locs[0].lat, locs[0].lng], 13);
+      }
+
+      map.eachLayer(layer => {
+        if (layer instanceof L.Marker) map.removeLayer(layer);
+      });
+
+      locs.forEach(loc => {
+        const marker = L.marker([loc.lat, loc.lng]).addTo(map);
+        const btn = document.createElement("button");
+        btn.innerText = "Select";
+        btn.style.padding = "5px 10px";
+        btn.style.background = "#2e7d32";
+        btn.style.color = "white";
+        btn.style.border = "none";
+        btn.style.borderRadius = "5px";
+        btn.style.marginTop = "5px";
+        btn.onclick = () => {
+          selectedStation = loc.name;
+          stationLabel.textContent = loc.name;
+          bookingForm.style.display = "block";
+        };
+        const popup = document.createElement("div");
+        popup.innerHTML = <b>${loc.name}</b><br/>;
+        popup.appendChild(btn);
+        marker.bindPopup(popup);
+      });
+    }
+
+    function bookSlot() {
+      const time = document.getElementById("time").value;
+      if (!time) return alert("Please select a time.");
+      const entry = Station: ${selectedStation}, Time: ${time};
+      let history = JSON.parse(localStorage.getItem("evBookings") || "[]");
+      history.push(entry);
+      localStorage.setItem("evBookings", JSON.stringify(history));
+      alert("Slot booked successfully!");
+      bookingForm.style.display = "none";
+      loadHistory();
+    }
+
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem("evBookings") || "[]");
+      historyList.innerHTML = "";
+      history.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        historyList.appendChild(li);
+      });
+    }
+
+    showBtn.onclick = loadStations;
+    bookBtn.onclick = bookSlot;
+    window.onload = loadHistory;
+  </script>
+</body>
+</html>
