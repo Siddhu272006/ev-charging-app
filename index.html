@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EV Charging Slot Booking</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #e6ffe6, #ccffcc);
+      color: #2e7031;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #247a38;
+    }
+    .container {
+      max-width: 500px;
+      margin: auto;
+      background: #f6fff6;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px #b2d8b2;
+    }
+    label, select, button {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+    }
+    select, button {
+      padding: 10px;
+      border: 1px solid #81c784;
+      border-radius: 10px;
+      background-color: #d0f0d0;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #a5d6a7;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      background: #eaffea;
+      padding: 8px;
+      margin: 5px 0;
+      border-left: 5px solid #66bb6a;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>EV Charging Slot Booking</h1>
+  <div class="container">
+    <label for="city">Select City:</label>
+    <select id="city">
+      <option value="">-- Choose City --</option>
+      <option value="Chennai">Chennai</option>
+      <option value="Madurai">Madurai</option>
+    </select>
+
+    <button onclick="showStations()">Show Stations</button>
+
+    <div id="stationArea" style="display:none;">
+      <label for="station">Select Station:</label>
+      <select id="station"></select>
+      <button onclick="bookSlot()">Book Slot</button>
+    </div>
+
+    <h3>Booking History</h3>
+    <ul id="history"></ul>
+  </div>
+
+  <script>
+    const stationsByCity = {
+      Chennai: ["HP EV Station", "Thunder EV", "GreenCharge Point"],
+      Madurai: ["EcoCharge Hub", "VoltUp Station", "Zap EV Spot"]
+    };
+
+    function showStations() {
+      const city = document.getElementById("city").value;
+      const stationSelect = document.getElementById("station");
+      const stationArea = document.getElementById("stationArea");
+
+      if (stationsByCity[city]) {
+        stationArea.style.display = "block";
+        stationSelect.innerHTML = "";
+        stationsByCity[city].forEach(station => {
+          const opt = document.createElement("option");
+          opt.value = station;
+          opt.textContent = station;
+          stationSelect.appendChild(opt);
+        });
+      } else {
+        stationArea.style.display = "none";
+        alert("City will be added soon!");
+      }
+    }
+
+    function bookSlot() {
+      const station = document.getElementById("station").value;
+      const history = JSON.parse(localStorage.getItem("evBookings") || "[]");
+      history.push({ station, time: new Date().toISOString() });
+      localStorage.setItem("evBookings", JSON.stringify(history));
+      updateHistory();
+      alert("Slot booked successfully!");
+    }
+
+    function updateHistory() {
+      const historyList = document.getElementById("history");
+      const history = JSON.parse(localStorage.getItem("evBookings") || "[]");
+      historyList.innerHTML = "";
+      history.forEach(entry => {
+        const li = document.createElement("li");
+        li.textContent = entry.station + " - " + new Date(entry.time).toLocaleString();
+        historyList.appendChild(li);
+      });
+    }
+
+    window.onload = updateHistory;
+  </script>
+</body>
+</html>
