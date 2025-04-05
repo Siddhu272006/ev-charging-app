@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EV Charging Station Finder</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #e8f5e9, #f1f8e9);
+      margin: 0;
+      padding: 20px;
+      color: #2e7d32;
+    }
+    h1 {
+      text-align: center;
+    }
+    #controls {
+      max-width: 600px;
+      margin: auto;
+      background: #ffffffcc;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    select, button, input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 1px solid #a5d6a7;
+    }
+    button {
+      background-color: #4caf50;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      background-color: #388e3c;
+    }
+    #map {
+      height: 400px;
+      margin-top: 20px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    #history {
+      margin-top: 30px;
+      background: #e0f2f1;
+      padding: 15px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>EV Charging Station Finder</h1>
+  <div id="controls">
+    <label for="city">Select City:</label>
+    <select id="city">
+      <option value="">--Choose City--</option>
+      <option value="madurai">Madurai</option>
+      <option value="chennai">Chennai</option>
+    </select>
+    <button onclick="showStations()">Show Stations</button>
+
+    <div id="map"></div>
+
+    <div id="bookingForm" style="display:none;">
+      <h3>Book Slot at <span id="stationName"></span></h3>
+      <input type="datetime-local" id="bookingTime" />
+      <button onclick="bookSlot()">Confirm Booking</button>
+    </div>
+
+    <div id="history">
+      <h3>Booking History</h3>
+      <ul id="bookingList"></ul>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script>
+    const stationData = {
+      madurai: [
+        { name: "HP EV Station", lat: 9.9252, lng: 78.1198 },
+        { name: "Thunder EV Station", lat: 9.9272, lng: 78.1140 },
+        { name: "EcoCharge Station", lat: 9.9200, lng: 78.1300 }
+      ],
+      chennai: [
+        { name: "HP EV Station", lat: 13.0827, lng: 80.2707 },
+        { name: "Thunder EV Station", lat: 13.0800, lng: 80.2500 },
+        { name: "EcoCharge Station", lat: 13.0750, lng: 80.2800 }
+      ]
+    };
+
+    let map;
+    let selectedStation = null;
+
+    function showStations() {
+      const city = document.getElementById("city").value;
+      if (!stationData[city]) {
+        alert("Stations for selected city will be added soon.");
+        return;
+      }
+
+      if (!map) {
+        map = L.map('map').setView([stationData[city][0].lat, stationData[city][0].lng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: 'Map data © OpenStreetMap contributors'
+        }).addTo(map);
+      } else {
+        map.setView([stationData[city][0].lat, stationData[city][0].lng], 13);
+        map.eachLayer(layer => {
+          if (layer instanceof L.Marker) map.removeLayer(layer);
+        });
+      }
+
+      stationData[city].forEach(station => {
+        const marker = L.marker([station.lat, station.lng]).addTo(map);
+        marker.bindPopup(`
+          <strong>${station.name}</strong><br/>
+          <button onclick="selectStation('${station.name}')">Select</button>
+        `);
+      });
+    }
+
+    function selectStation(name) {
+      selectedStation = name;
+      document.getElementById("stationName").textContent = name;
+      document.getElementById("bookingForm").style.display = "block";
+    }
+
+    function bookSlot() {
+      const time = document.getElementById("bookingTime").value;
+      if (!selectedStation || !time) {
+        alert("Please select a station and time.");
+        return;
+      }
+
+      const booking = {
+        station: selectedStation,
+        time: time
+      };
+
+      const existing = JSON.parse(localStorage.getItem("bookings") || "[]");
+      existing.push(booking);
+      localStorage.setItem("bookings", JSON.stringify(existing));
+
+      alert("Slot booked successfully!");
+      document.getElementById("bookingTime").value = "";
+      document.getElementById("bookingForm").style.display = "none";
+      updateBookingHistory();
+    }
+
+    function updateBookingHistory() {
+      const list = document.getElementById("bookingList");
+      list.innerHTML = "";
+      const bookings = JSON.parse(localStorage.getItem("bookings") || "[]");
+      bookings.forEach(b => {
+        const li = document.createElement("li");
+        li.textContent = Station: ${b.station}, Time: ${new Date(b.time).toLocaleString()};
+        list.appendChild(li);
+      });
+    }
+
+    window.onload = updateBookingHistory;
+  </script>
+</body>
+</html>
