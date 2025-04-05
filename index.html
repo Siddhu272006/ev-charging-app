@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EV Station Booking</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background: #f0fdf4;
+      padding: 20px;
+      color: #1a202c;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #2f855a;
+    }
+    select, input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      background-color: #38a169;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #2f855a;
+    }
+    .stations {
+      margin-top: 20px;
+    }
+    .station {
+      background: #e6fffa;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .history {
+      margin-top: 20px;
+      background: #fefcbf;
+      padding: 12px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>EV Charging Station Booking</h2>
+    <label>Select City</label>
+    <select id="citySelect">
+      <option value="">-- Select --</option>
+      <option value="Chennai">Chennai</option>
+      <option value="Madurai">Madurai</option>
+    </select>
+
+    <button onclick="showStations()">Show Stations</button>
+
+    <div id="stationList" class="stations"></div>
+
+    <div id="bookingSection" style="display:none;">
+      <h3>Book Slot</h3>
+      <label>Date:</label>
+      <input type="date" id="dateInput" required>
+      <label>Time:</label>
+      <input type="time" id="timeInput" required>
+      <label>Charging Type:</label>
+      <select id="typeSelect">
+        <option value="Normal">Normal</option>
+        <option value="Rapid">Rapid</option>
+      </select>
+      <button onclick="bookStation()">Confirm Booking</button>
+    </div>
+
+    <div id="bookingHistory" class="history" style="display:none;"></div>
+  </div>
+
+  <script>
+    const stations = {
+      Chennai: ["T-Nagar EV Point", "Velachery ChargeHub", "Anna Nagar SuperCharge"],
+      Madurai: ["Madurai Main EV", "KK Nagar ChargeZone", "Goripalayam Spark"]
+    };
+
+    let selectedStation = "";
+
+    function showStations() {
+      const city = document.getElementById("citySelect").value;
+      const stationList = document.getElementById("stationList");
+      stationList.innerHTML = "";
+
+      if (!city) {
+        alert("Please select a city!");
+        return;
+      }
+
+      stations[city].forEach(station => {
+        const div = document.createElement("div");
+        div.className = "station";
+        div.innerHTML = `
+          <strong>${station}</strong><br/>
+          <button onclick="selectStation('${station}')">Select Station</button>
+        `;
+        stationList.appendChild(div);
+      });
+    }
+
+    function selectStation(name) {
+      selectedStation = name;
+      document.getElementById("bookingSection").style.display = "block";
+    }
+
+    function bookStation() {
+      const date = document.getElementById("dateInput").value;
+      const time = document.getElementById("timeInput").value;
+      const type = document.getElementById("typeSelect").value;
+
+      if (!date || !time) {
+        alert("Please select date and time.");
+        return;
+      }
+
+      const summary = `
+        <h4>Booking Confirmed!</h4>
+        Station: ${selectedStation}<br/>
+        Date: ${date}<br/>
+        Time: ${time}<br/>
+        Type: ${type}
+      `;
+      const historyDiv = document.getElementById("bookingHistory");
+      historyDiv.style.display = "block";
+      historyDiv.innerHTML = summary;
+
+      // Reset form
+      document.getElementById("bookingSection").style.display = "none";
+      selectedStation = "";
+    }
+  </script>
+</body>
+</html>
